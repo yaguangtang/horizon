@@ -20,6 +20,7 @@ from horizon import tabs
 
 from openstack_dashboard import api
 from openstack_dashboard.api import ceilometer
+from openstack_dashboard.api import nova
 
 
 class GlobalStatsTab(tabs.Tab):
@@ -42,9 +43,9 @@ class GlobalStatsTab(tabs.Tab):
         if not meters._ceilometer_meter_list:
             msg = _("There are no meters defined yet.")
             messages.warning(request, msg)
-
         context = {
             'nova_meters': meters.list_nova(),
+            'hardware_meters': meters.list_hardware(),
             'neutron_meters': meters.list_neutron(),
             'glance_meters': meters.list_glance(),
             'cinder_meters': meters.list_cinder(),
@@ -64,8 +65,51 @@ class DailyReportTab(tabs.Tab):
         context = template.RequestContext(request)
         return context
 
+class InstanceTab(tabs.Tab):
+    name = _("Instance Report")
+    slug = "instance_report"
+    template_name = ("admin/metering/instance.html")
+
+    def get_context_data(self, request):
+        meters = ceilometer.Meters(request)
+        instances = nova.server_list(request,
+                                     all_tenants=True)
+        server_list = api.nova.hypervisor_list(request)
+        if not meters._ceilometer_meter_list:
+            msg = _("There are no meters defined yet.")
+            messages.warning(request, msg)
+
+        context = {
+            'nova_meters': meters.list_nova(),
+            'instance_list': instances[0],
+            'hardware_meters': meters.list_hardware(),
+            'server_list': server_list,
+        }
+
+        return context
+
+
+class ServerTab(tabs.Tab):
+    name = _("Server Report")
+    slug = "server_report"
+    template_name = ("admin/metering/server.html")
+
+    def get_context_data(self, request):
+        meters = ceilometer.Meters(request)
+        server_list = api.nova.hypervisor_list(request)
+        if not meters._ceilometer_meter_list:
+            msg = _("There are no meters defined yet.")
+            messages.warning(request, msg)
+
+        context = {
+            'hardware_meters': meters.list_hardware(),
+            'server_list': server_list,
+        }
+
+        return context
+
 
 class CeilometerOverviewTabs(tabs.TabGroup):
     slug = "ceilometer_overview"
-    tabs = (DailyReportTab, GlobalStatsTab, )
+    tabs = (InstanceTab,)
     sticky = True

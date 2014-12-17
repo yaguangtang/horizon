@@ -49,7 +49,6 @@ from openstack_dashboard.dashboards.project.instances \
 class IndexView(tables.DataTableView):
     table_class = project_tables.InstancesTable
     template_name = 'project/instances/index.html'
-
     def has_more_data(self, table):
         return self._more
 
@@ -334,4 +333,58 @@ class ResizeView(workflows.WorkflowView):
                 'old_flavor_id': _object.flavor['id'],
                 'old_flavor_name': getattr(_object, 'flavor_name', ''),
                 'flavors': self.get_flavors()})
+        return initial
+
+
+class BackupView(workflows.WorkflowView):
+    workflow_class = project_workflows.BackupInstance
+    success_url = reverse_lazy("horizon:project:instances:index")
+
+    def get_context_data(self, **kwargs):
+        context = super(BackupView, self).get_context_data(**kwargs)
+        context["instance_id"] = self.kwargs['instance_id']
+        instance = api.nova.server_get(self.request,
+                                       self.kwargs['instance_id'])
+        context['metadata'] = instance.metadata
+        return context
+
+    @memoized.memoized_method
+    def get_object(self, *args, **kwargs):
+        instance_id = self.kwargs['instance_id']
+        instance = api.nova.server_get(self.request, instance_id)
+        metadata = instance.metadata
+        return metadata
+
+    def get_initial(self):
+        initial = super(BackupView, self).get_initial()
+        metadata = self.get_object()
+        initial.update({'instance_id': self.kwargs['instance_id'],
+            'metadata': metadata})
+        return initial
+
+
+class HaView(workflows.WorkflowView):
+    workflow_class = project_workflows.HaInstance
+    success_url = reverse_lazy("horizon:project:instances:index")
+
+    def get_context_data(self, **kwargs):
+        context = super(HaView, self).get_context_data(**kwargs)
+        context["instance_id"] = self.kwargs['instance_id']
+        instance = api.nova.server_get(self.request,
+                                       self.kwargs['instance_id'])
+        context['metadata'] = instance.metadata
+        return context
+
+    @memoized.memoized_method
+    def get_object(self, *args, **kwargs):
+        instance_id = self.kwargs['instance_id']
+        instance = api.nova.server_get(self.request, instance_id)
+        metadata = instance.metadata
+        return metadata
+
+    def get_initial(self):
+        initial = super(HaView, self).get_initial()
+        metadata = self.get_object()
+        initial.update({'instance_id': self.kwargs['instance_id'],
+            'metadata': metadata})
         return initial

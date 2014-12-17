@@ -20,4 +20,6 @@ from openstack_dashboard.dashboards.admin.metering import views
 urlpatterns = patterns('openstack_dashboard.dashboards.admin.metering.views',
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^samples$', views.SamplesView.as_view(), name='samples'),
+    url(r'^instance$', views.InstanceView.as_view(), name='instance'),
+    url(r'^server$', views.ServerView.as_view(), name='server'),
     url(r'^report$', views.ReportView.as_view(), name='report'))

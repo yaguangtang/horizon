@@ -97,6 +97,126 @@ class SamplesView(TemplateView):
             content_type='application/json')
 
 
+class InstanceView(TemplateView):
+    template_name = "admin/metering/samples.csv"
+
+    @staticmethod
+    def _series_for_meter(aggregates,
+                          resource_name,
+                          meter_name,
+                          stats_name,
+                          unit):
+        """Construct datapoint series for a meter from resource aggregates."""
+        series = []
+        for resource in aggregates:
+            if getattr(resource, meter_name):
+                point = {'unit': unit,
+                         'name': getattr(resource, resource_name),
+                         'data': []}
+                for statistic in getattr(resource, meter_name):
+                    date = statistic.duration_end[:19]
+                    value = float(getattr(statistic, stats_name))
+                    point['data'].append({'x': date, 'y': value})
+                series.append(point)
+        return series
+
+    def get(self, request, *args, **kwargs):
+        meter = request.GET.get('meter', None)
+        resource_id = request.GET.get('instance_id', None)
+        period = request.GET.get('period', None)
+        if not meter:
+            return HttpResponse(json.dumps({}),
+                                content_type='application/json')
+
+        meter_name = meter.replace(".", "_")
+        date_options = request.GET.get('date_options', None)
+        group_by = request.GET.get('group_by', None)
+        date_from = request.GET.get('date_from', None)
+        date_to = request.GET.get('date_to', None)
+        stats_attr = request.GET.get('stats_attr', 'avg')
+        resources, unit = query_data(request,
+                                     date_from,
+                                     date_to,
+                                     date_options,
+                                     group_by,
+                                     meter,
+                                     period=period,
+                                     resource_id=resource_id)
+        resource_name = 'id' if group_by == "project" else 'resource_id'
+        series = self._series_for_meter(resources,
+                                        resource_name,
+                                        meter_name,
+                                        stats_attr,
+                                        unit)
+
+        ret = {}
+        ret['series'] = series
+        ret['settings'] = {}
+
+        return HttpResponse(json.dumps(ret),
+            content_type='application/json')
+
+
+class ServerView(TemplateView):
+    template_name = "admin/metering/samples.csv"
+
+    @staticmethod
+    def _series_for_meter(aggregates,
+                          resource_name,
+                          meter_name,
+                          stats_name,
+                          unit):
+        """Construct datapoint series for a meter from resource aggregates."""
+        series = []
+        for resource in aggregates:
+            if getattr(resource, meter_name):
+                point = {'unit': unit,
+                         'name': getattr(resource, resource_name),
+                         'data': []}
+                for statistic in getattr(resource, meter_name):
+                    date = statistic.duration_end[:19]
+                    value = float(getattr(statistic, stats_name))
+                    point['data'].append({'x': date, 'y': value})
+                series.append(point)
+        return series
+
+    def get(self, request, *args, **kwargs):
+        meter = request.GET.get('meter', None)
+        period = request.GET.get('period', None)
+        resource_id = request.GET.get('server_id', None)
+        if not meter:
+            return HttpResponse(json.dumps({}),
+                                content_type='application/json')
+
+        meter_name = meter.replace(".", "_")
+        date_options = request.GET.get('date_options', None)
+        date_from = request.GET.get('date_from', None)
+        date_to = request.GET.get('date_to', None)
+        stats_attr = request.GET.get('stats_attr', 'avg')
+        group_by = request.GET.get('group_by', None)
+        resources, unit = query_data(request,
+                                     date_from,
+                                     date_to,
+                                     date_options,
+                                     group_by,
+                                     meter,
+                                     period=period,
+                                     resource_id=resource_id)
+        resource_name = 'id' if group_by == "project" else 'resource_id'
+        series = self._series_for_meter(resources,
+                                        resource_name,
+                                        meter_name,
+                                        stats_attr,
+                                        unit)
+
+        ret = {}
+        ret['series'] = series
+        ret['settings'] = {}
+
+        return HttpResponse(json.dumps(ret),
+            content_type='application/json')
+
+
 class ReportView(tables.MultiTableView):
     template_name = 'admin/metering/report.html'
 
@@ -133,6 +253,7 @@ class ReportView(tables.MultiTableView):
             _('Cinder'): meters.list_cinder(),
             _('Swift_meters'): meters.list_swift(),
             _('Kwapi'): meters.list_kwapi(),
+            _('hardware'): meters.list_hardware(),
         }
         project_rows = {}
         date_options = request.POST.get('date_options', None)
@@ -184,17 +305,17 @@ def _calc_period(date_from, date_to):
             # get the time delta in seconds
         delta = date_to - date_from
         if delta.days <= 0:
-            # it's one day
-            delta_in_seconds = 3600 * 24
+            # it's less than one day
+            delta_in_seconds = delta.seconds
         else:
             delta_in_seconds = delta.days * 24 * 3600 + delta.seconds
-            # Lets always show 400 samples in the chart. Know that it is
+            # Lets always show 100 samples in the chart. Know that it is
         # maximum amount of samples and it can be lower.
-        number_of_samples = 400
+        number_of_samples = 50
         period = delta_in_seconds / number_of_samples
     else:
         # If some date is missing, just set static window to one day.
-        period = 3600 * 24
+        period = 600
     return period
 
 
@@ -226,7 +347,8 @@ def _calc_date_args(date_from, date_to, date_options):
                              "recognized")
     else:
         try:
-            date_from = datetime.now() - timedelta(days=int(date_options))
+            date_from = datetime.now() - timedelta(seconds=
+                int(float(date_options)*24*60*60))
             date_to = datetime.now()
         except Exception:
             raise ValueError("The time delta must be an "
@@ -240,12 +362,14 @@ def query_data(request,
                date_options,
                group_by,
                meter,
-               period=None):
+               period=None,
+               resource_id=None):
     date_from, date_to = _calc_date_args(date_from,
                                          date_to,
                                          date_options)
     if not period:
         period = _calc_period(date_from, date_to)
+
     additional_query = []
     if date_from:
         additional_query += [{'field': 'timestamp',
@@ -290,7 +414,12 @@ def query_data(request,
 
     else:
         query = []
-
+        if resource_id:
+            resource_query = [{
+                              "field": "resource_id",
+                              "op": "eq",
+                              "value": resource_id}]
+            query = resource_query
         def filter_by_meter_name(resource):
             """Function for filtering of the list of resources.
 

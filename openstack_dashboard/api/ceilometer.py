@@ -728,12 +728,13 @@ class Meters(object):
         self._cinder_meters_info = self._get_cinder_meters_info()
         self._swift_meters_info = self._get_swift_meters_info()
         self._kwapi_meters_info = self._get_kwapi_meters_info()
+        self._hardware_meters_info = self._get_hardware_meters_info()
 
         # Storing the meters info of all services together.
         all_services_meters = (self._nova_meters_info,
             self._neutron_meters_info, self._glance_meters_info,
             self._cinder_meters_info, self._swift_meters_info,
-            self._kwapi_meters_info)
+            self._kwapi_meters_info, self._hardware_meters_info)
         self._all_meters_info = {}
         for service_meters in all_services_meters:
             self._all_meters_info.update(dict([(meter_name, meter_info)
@@ -814,6 +815,17 @@ class Meters(object):
 
         return self._list(only_meters=self._kwapi_meters_info.keys(),
             except_meters=except_meters)
+
+    def list_hardware(self, except_meters=None):
+        """Returns a list of meters tied to hardware
+
+        :Parameters:
+          - `except_meters`: The list of meter names we don't want to show
+        """
+
+        return self._list(only_meters=self._hardware_meters_info.keys(),
+            except_meters=except_meters)
+
 
     def _list(self, only_meters=None, except_meters=None):
         """Returns a list of meters based on the meters names
@@ -1166,5 +1178,58 @@ class Meters(object):
             ('power', {
                 'label': '',
                 'description': _("Power consumption"),
+            }),
+        ])
+
+    def _get_hardware_meters_info(self):
+        """Returns additional info for each meter
+
+        That will be used for augmenting the Ceilometer meter
+        """
+
+        return datastructures.SortedDict([
+            ('hardware.cpu.load.1min', {
+                'label': '',
+                'description': _("CPU load in 1 minute"),
+            }),
+            ('hardware.cpu.load.5min', {
+                'label': '',
+                'description': _("CPU load in 5 minute"),
+            }),
+            ('hardware.cpu.load.15min', {
+                'label': '',
+                'description': _("CPU load in 15 minute"),
+            }),
+            ('hardware.memory.total', {
+                'label': '',
+                'description': _("Total memory of server"),
+            }),
+            ('hardware.memory.used', {
+                'label': '',
+                'description': _("used memory of server"),
+            }),
+            ('hardware.disk.size.total', {
+                'label': '',
+                'description': _("Total disk size of server"),
+            }),
+            ('hardware.disk.size.used', {
+                'label': '',
+                'description': _("used disk size of server"),
+            }),
+            ('hardware.network.bandwidth.bytes', {
+                'label': '',
+                'description': _("network bandwidth of server"),
+            }),
+            ('hardware.network.incoming.bytes', {
+                'label': '',
+                'description': _("network incoming of server"),
+            }),
+            ('hardware.network.outgoing.bytes', {
+                'label': '',
+                'description': _("network outgoing of server"),
+            }),
+            ('hardware.network.outgoing.errors', {
+                'label': '',
+                'description': _("network errors of server"),
             }),
         ])

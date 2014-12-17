@@ -378,6 +378,60 @@ class ResizeLink(tables.LinkAction):
                 and not is_deleting(instance))
 
 
+class BackupLink(tables.LinkAction):
+    name = "backup"
+    verbose_name = _("Backup Instance")
+    url = "horizon:project:instances:backup"
+    classes = ("ajax-modal", "btn-backup")
+    policy_rules = (("compute", "compute:backup"),)
+
+    def get_policy_target(self, request, datum=None):
+        project_id = None
+        if datum:
+            project_id = getattr(datum, 'tenant_id', None)
+        return {"project_id": project_id}
+
+    def get_link_url(self, project):
+        return self._get_link_url(project, 'backup_choice')
+
+    def _get_link_url(self, project, step_slug):
+        base_url = urlresolvers.reverse(self.url, args=[project.id])
+        param = urlencode({"step": step_slug})
+        return "?".join([base_url, param])
+
+    def allowed(self, request, instance):
+        return ((instance.status in ACTIVE_STATES
+                 or instance.status == 'SHUTOFF')
+                and not is_deleting(instance))
+
+
+class HaLink(tables.LinkAction):
+    name = "ha"
+    verbose_name = _("Instance HA")
+    url = "horizon:project:instances:ha"
+    classes = ("ajax-modal", "btn-ha")
+    policy_rules = (("compute", "compute:backup"),)
+
+    def get_policy_target(self, request, datum=None):
+        project_id = None
+        if datum:
+            project_id = getattr(datum, 'tenant_id', None)
+        return {"project_id": project_id}
+
+    def get_link_url(self, project):
+        return self._get_link_url(project, 'ha_choice')
+
+    def _get_link_url(self, project, step_slug):
+        base_url = urlresolvers.reverse(self.url, args=[project.id])
+        param = urlencode({"step": step_slug})
+        return "?".join([base_url, param])
+
+    def allowed(self, request, instance):
+        return ((instance.status in ACTIVE_STATES
+                 or instance.status == 'SHUTOFF')
+                and not is_deleting(instance))
+
+
 class ConfirmResize(tables.Action):
     name = "confirm"
     verbose_name = _("Confirm Resize/Migrate")
@@ -767,4 +821,5 @@ class InstancesTable(tables.DataTable):
                        DecryptInstancePassword, EditInstanceSecurityGroups,
                        ConsoleLink, LogLink, TogglePause, ToggleSuspend,
                        ResizeLink, SoftRebootInstance, RebootInstance,
-                       StopInstance, RebuildInstance, TerminateInstance)
+                       StopInstance, RebuildInstance, TerminateInstance,
+                       BackupLink, HaLink)

@@ -594,6 +594,10 @@ def server_resize(request, instance_id, flavor, disk_config=None, **kwargs):
                                        disk_config, **kwargs)
 
 
+def server_meta(request, instance_id, meta=None):
+    novaclient(request).servers.set_meta(instance_id, meta)
+
+
 def server_confirm_resize(request, instance_id):
     novaclient(request).servers.confirm_resize(instance_id)
 

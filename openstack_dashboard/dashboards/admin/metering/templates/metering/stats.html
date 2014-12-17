@@ -32,6 +32,16 @@
             </optgroup>
           {% endif %}
 
+          {% if hardware_meters %}
+            <optgroup label='{% trans "Server (hardware)" %}'>
+              {% for meter in hardware_meters %}
+                <option title="{{ meter.description }}"  value="{{ meter.name }}" data-unit="{{ meter.unit }}">
+                  {{ meter.label }}
+                </option>
+              {% endfor %}
+            </optgroup>
+          {% endif %}
+
           {% if glance_meters %}
             <optgroup label='{% trans "Image (Glance)" %}'>
               {% for meter in glance_meters %}

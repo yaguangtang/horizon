@@ -41,6 +41,8 @@ urlpatterns = patterns(VIEW_MOD,
     url(INSTANCES % 'spice', 'spice', name='spice'),
     url(INSTANCES % 'rdp', 'rdp', name='rdp'),
     url(INSTANCES % 'resize', views.ResizeView.as_view(), name='resize'),
+    url(INSTANCES % 'backup', views.BackupView.as_view(), name='backup'),
+    url(INSTANCES % 'ha', views.HaView.as_view(), name='ha'),
     url(INSTANCES_KEYPAIR % 'decryptpassword',
         views.DecryptPasswordView.as_view(), name='decryptpassword'),
 )
