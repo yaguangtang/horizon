@@ -28,6 +28,6 @@ from openstack_dashboard.dashboards.project import dashboard
 class Containers(horizon.Panel):
     name = _("Containers")
     slug = 'containers'
-    permissions = ('openstack.services.object-store',)
+    permissions = ('openstack.services.object-store','openstack.roles.admin',)
 
 dashboard.Project.register(Containers)

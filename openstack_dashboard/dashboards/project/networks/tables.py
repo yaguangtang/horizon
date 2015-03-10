@@ -104,5 +104,5 @@ class NetworksTable(tables.DataTable):
     class Meta:
         name = "networks"
         verbose_name = _("Networks")
-        table_actions = (CreateNetwork, DeleteNetwork)
-        row_actions = (EditNetwork, CreateSubnet, DeleteNetwork)
+        #table_actions = (CreateNetwork, DeleteNetwork)
+        #row_actions = (EditNetwork, CreateSubnet, DeleteNetwork)

@@ -23,6 +23,7 @@ class BasePanels(horizon.PanelGroup):
     slug = "compute"
     name = _("Compute")
     panels = ('overview',
+              'metering',
               'instances',
               'volumes',
               'images',

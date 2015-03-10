@@ -138,5 +138,5 @@ class RoutersTable(tables.DataTable):
         verbose_name = _("Routers")
         status_columns = ["status"]
         row_class = UpdateRow
-        table_actions = (CreateRouter, DeleteRouter)
-        row_actions = (SetGateway, ClearGateway, DeleteRouter)
+        #table_actions = (CreateRouter, DeleteRouter)
+        #row_actions = (SetGateway, ClearGateway, DeleteRouter)
